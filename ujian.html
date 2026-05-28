@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ujian Berlangsung</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            user-select: none; 
+            -webkit-user-select: none; 
+            background-color: #f3f4f6;
+        }
+        #pdf-container { height: calc(100dvh - 64px); }
+        
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+            gap: 8px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #080808; }
+        ::-webkit-scrollbar-thumb { background: #6e8499; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .cbt-header { background: #1e293b; color: white; }
+    </style>
+</head>
+<body class="text-slate-800 overflow-hidden font-sans">
+    <script src="config.js"></script>
+
+    <!-- Progress Bar Sisa Waktu -->
+    <div class="fixed top-0 left-0 w-full h-1 z-[60] bg-slate-100">
+        <div id="progressBar" class="h-full bg-indigo-500 transition-all duration-1000 w-0"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="glass px-4 py-4 md:px-10 flex justify-between items-center shadow-sm border-b border-slate-200/60 relative z-50">
+        <div class="flex items-center gap-4">
+            <button onclick="confirmHome()" class="bg-white text-slate-400 p-2.5 rounded-2xl hover:bg-red-50 hover:text-red-500 transition-all border border-slate-200 shadow-sm group" title="Keluar Ujian">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            </button>
+            <div class="leading-tight">
+                <p id="userDisplay" class="font-black text-slate-900 text-sm md:text-2xl tracking-tighter truncate max-w-[150px] md:max-w-none"></p>
+                <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-100/50">
+                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                        <p id="mapelDisplay" class="text-[9px] md:text-[11px] text-indigo-600 font-black uppercase tracking-widest"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <div class="bg-slate-900 px-5 py-2.5 rounded-[1.5rem] flex items-center gap-4 shadow-xl shadow-indigo-900/10">
+                <div class="text-right leading-none">
+                    <p class="hidden md:block text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">Waktu</p>
+                    <p id="timer" class="text-xl md:text-2xl font-mono font-bold text-white tracking-wider">90:00</p>
+                </div>
+                <div class="w-px h-8 bg-slate-700"></div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+        </div>
+    </header>
+
+    <!-- Flipbook Container -->
+    <div id="pdf-container" class="p-2 md:p-8 max-w-[1600px] mx-auto transition-all duration-700">
+        <div class="w-full h-full bg-white rounded-[2rem] md:rounded-[3rem] overflow-hidden border border-slate-200/60 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.1)] flex flex-col relative">
+            
+            <!-- Toolbar -->
+            <div class="bg-slate-50/40 border-b border-slate-100 px-8 py-3 flex items-center justify-between min-h-[56px]">
+                <div class="flex items-center gap-3">
+                    <div class="w-2 h-6 bg-indigo-500 rounded-full"></div>
+                    <div class="text-slate-400 text-[10px] md:text-xs font-black uppercase tracking-[0.2em]">Exam Worksheet</div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="location.reload()" class="p-2 hover:bg-white rounded-xl text-slate-400 hover:text-indigo-500 hover:shadow-sm transition-all group" title="Refresh Soal">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Kontainer Iframe untuk File HTML -->
+            <div class="w-full h-full bg-white relative">
+                <div class="absolute inset-0 pointer-events-none border-[12px] md:border-[24px] border-slate-50/30 z-10"></div>
+                <iframe id="examFrame" src="about:blank" class="w-full h-full border-none"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Peringatan Pop-up -->
+    <div id="alertBox" class="fixed inset-0 bg-red-900/10 backdrop-blur-md flex items-center justify-center hidden z-[100] p-6 text-center">
+        <div class="bg-white border border-red-100 p-12 rounded-[3rem] max-w-md shadow-2xl">
+            <div class="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            </div>
+            <h2 class="text-3xl font-black text-slate-900 mb-4 tracking-tight uppercase">Pelanggaran!</h2>
+            <p class="text-slate-500 mb-8 leading-relaxed">Anda terdeteksi berpindah halaman/tab. Silakan klik tombol di bawah untuk melanjutkan sesi ujian Anda.</p>
+            <button onclick="closeAlert()" class="w-full py-5 bg-red-600 hover:bg-red-700 text-white rounded-[1.5rem] font-bold transition-all shadow-lg shadow-red-200 uppercase tracking-widest text-sm">Saya Mengerti</button>
+        </div>
+    </div>
+
+    <!-- Modal Mulai Ujian (Pemicu Fullscreen Pertama) -->
+    <div id="startModal" class="fixed inset-0 bg-slate-50 flex items-center justify-center z-[300] p-6">
+        <div class="text-center p-12 max-w-md bg-white border border-slate-200 shadow-2xl rounded-[3.5rem] relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-indigo-500"></div>
+            <div class="w-24 h-24 bg-indigo-50 text-indigo-600 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+            </div>
+            <h2 class="text-3xl font-black text-slate-900 mb-3 tracking-tight">Siap Ujian?</h2>
+            <p class="text-slate-500 mb-10 text-sm leading-relaxed">Sistem akan mengunci layar Anda secara penuh demi integritas ujian. Pastikan semua persiapan telah selesai.</p>
+            <button onclick="startExamNow()" class="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-3xl shadow-xl shadow-indigo-100 transition-all transform active:scale-95 uppercase tracking-widest text-sm">Masuk Mode Ujian</button>
+        </div>
+    </div>
+
+    <!-- Modal Minta Token Ulang (Kecurangan) -->
+    <div id="retokenModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xl hidden flex items-center justify-center z-[200] p-4">
+        <div class="bg-white border border-slate-200 rounded-[3.5rem] p-12 w-full max-w-md shadow-2xl text-center">
+            <div class="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m0 0v2m0-2h2m-2 0H10m4-11a4 4 0 11-8 0 4 4 0 018 0zM7 10h10a2 2 0 012 2v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg>
+            </div>
+            <h2 class="text-3xl font-black text-slate-900 mb-3 tracking-tighter uppercase">Akses Terhenti</h2>
+            <p class="text-slate-500 mb-10 text-sm leading-relaxed">Sesi Anda terdeteksi tidak aktif. Silakan masukkan kembali Token mata pelajaran untuk membuka lembar soal.</p>
+            <form id="retokenForm" class="space-y-4">
+                <input type="text" id="inputRetoken" placeholder="KODE TOKEN" required class="w-full px-6 py-5 rounded-[1.5rem] bg-slate-50 border border-slate-200 text-slate-900 text-center font-black tracking-[0.4em] focus:ring-4 focus:ring-red-50 focus:border-red-200 outline-none transition-all">
+                <button type="submit" class="w-full py-5 bg-slate-900 hover:bg-black text-white font-bold rounded-[1.5rem] shadow-xl transition-all uppercase tracking-widest text-xs">Otorisasi & Lanjutkan</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="exam.js"></script>
+</body>
+</html>
